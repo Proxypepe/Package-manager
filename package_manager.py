@@ -97,7 +97,7 @@ class Downloader:
     def __set_package(self, name):
         self.__package_name = name
 
-    def __get_package_name(self):
+    def __get_package(self):
         return self.__package_name
 
     def __set_download_link(self, link):
@@ -107,7 +107,7 @@ class Downloader:
         return self.__download_link
 
     # properties
-    package_name = property(fset=__set_package, fget=__get_package_name)
+    package_name = property(fset=__set_package, fget=__get_package)
     download_link = property(fset=__set_download_link, fget=__get_download_link)
 
     def __download(self):
@@ -146,9 +146,13 @@ class DependenceSolver:
     def __get_zip_file(self):
         return self.__zipf
 
+    def __get_deps(self):
+        return self.__dependencies
+
     # properties
     file_name = property(fset=__set_file_name, fget=__get_file_name)
     zip_file = property(fset=__set_zip_file, fget=__get_zip_file)
+    dependencies = property(fget=__get_deps)
 
     def __set_metadata(self):
         self.zip_file = self.__file_name
@@ -157,6 +161,7 @@ class DependenceSolver:
             self.__meta = file.read().decode("utf-8")
 
     def __check_dependencies(self):
+        self.__dependencies.clear()
         for line in self.__meta.split("\n"):
             line = line.split(" ")
             if not line:
@@ -164,18 +169,35 @@ class DependenceSolver:
             if line[0] == "Requires-Dist:" and "extra" not in line:
                 self.__dependencies[line[1]] = 0
 
+    def __recursive_dep(self, dictionary: dict):
+        pass
+
     def run(self):
         self.__set_metadata()
         self.__check_dependencies()
-        print(self.__dependencies)
-        parser = Parser()
-        downloader = Downloader()
-        for elem in self.__dependencies.keys():
-            parser.package_name = elem
-            parser.run()
-            downloader.download_link = parser.download_link
-            downloader.package_name = parser.package_name
-            downloader.run()
 
 class Package_manager:
-    pass
+
+    def __init__(self):
+        self.__parser = Parser()
+        self.__downloader = Downloader()
+        self.__solver = DependenceSolver()
+
+    def run(self, d: dict):
+        if not d:
+            return
+        else:
+            for elem in d.keys():
+                try:
+                    print(d)
+                    self.__parser.package_name = elem
+                    self.__parser.run()
+                    self.__downloader.download_link = self.__parser.download_link
+                    self.__downloader.package_name = self.__parser.package_name
+                    self.__downloader.run()
+                    self.__solver.file_name = self.__downloader.package_name
+                    self.__solver.run()
+                    self.run(self.__solver.dependencies)
+                except RuntimeError:
+                    pass
+            return

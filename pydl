@@ -17,10 +17,6 @@ def main():
             solver.run()
             pack.run(solver.dependencies)
 
-def debug():
-    pass
-
-
 if __name__ == '__main__':
     main()
 
