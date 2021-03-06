@@ -67,10 +67,13 @@ class Parser:
             if "windows" in self.__system_platform[1].lower():
                 if self.__system_platform[0] == "64bit":
                     condition = self.__check("win_amd64", packages)
-                    print(self.__download_link)
                     if condition:
                         return
-                    
+                if self.__system_platform[0] == "32bit":
+                    condition = self.__check("win_32", packages)
+                    if condition:
+                        return
+
     def run(self):
         self.__parse_download_page()
         self.__create_download_link()
