@@ -10,7 +10,7 @@ def main():
         downloader.download_link = parser.download_link
         downloader.package_name = parser.package_name
         # print(parser.download_link, parser.package_name)
-        # downloader.run()
+        downloader.run()
 
 
 if __name__ == '__main__':

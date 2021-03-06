@@ -65,14 +65,21 @@ class Parser:
         packages.reverse()
         if self.__version == "":
             if "windows" in self.__system_platform[1].lower():
+                condition = False
                 if self.__system_platform[0] == "64bit":
                     condition = self.__check("win_amd64", packages)
-                    if condition:
-                        return
-                if self.__system_platform[0] == "32bit":
+                elif self.__system_platform[0] == "32bit":
                     condition = self.__check("win_32", packages)
+                if condition:
+                    return
+                else:
+                    condition = self.__check(".whl", packages)
                     if condition:
                         return
+                    else:
+                        condition = self.__check(".tar.gz", packages)
+                        if condition:
+                            return
 
     def run(self):
         self.__parse_download_page()
