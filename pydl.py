@@ -1,5 +1,5 @@
 import sys
-from package_manager import Parser, Downloader
+from package_manager import Parser, Downloader, DependenceSolver
 
 def main():
     parser = Parser()
@@ -13,6 +13,13 @@ def main():
         downloader.run()
 
 
+def test():
+    solver = DependenceSolver()
+    solver.file_name = "Django-3.2b1-py3-none-any.whl"
+    solver.run()
+
+
 if __name__ == '__main__':
-    main()
+    # main()
+    test()
 

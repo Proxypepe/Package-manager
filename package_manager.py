@@ -1,7 +1,9 @@
 import platform
 import requests
 from bs4 import BeautifulSoup
+from zipfile import ZipFile
 import Errors
+
 
 class Parser:
 
@@ -123,3 +125,57 @@ class Downloader:
             raise Errors.NoDownloadLink
         self.__download()
 
+
+class DependenceSolver:
+
+    def __init__(self):
+        self.__file_name = ""
+        self.__meta_data = ""
+        self.__zipf = None
+        self.__dependencies = {}
+
+    def __set_file_name(self, name):
+        self.__file_name = name
+
+    def __get_file_name(self):
+        return self.__file_name
+
+    def __set_zip_file(self, name):
+        self.__zipf = ZipFile(name)
+
+    def __get_zip_file(self):
+        return self.__zipf
+
+    # properties
+    file_name = property(fset=__set_file_name, fget=__get_file_name)
+    zip_file = property(fset=__set_zip_file, fget=__get_zip_file)
+
+    def __set_metadata(self):
+        self.zip_file = self.__file_name
+        meta_path = [s for s in self.__zipf.namelist() if "METADATA" in s][0]
+        with self.__zipf.open(meta_path) as file:
+            self.__meta = file.read().decode("utf-8")
+
+    def __check_dependencies(self):
+        for line in self.__meta.split("\n"):
+            line = line.split(" ")
+            if not line:
+                break
+            if line[0] == "Requires-Dist:" and "extra" not in line:
+                self.__dependencies[line[1]] = 0
+
+    def run(self):
+        self.__set_metadata()
+        self.__check_dependencies()
+        print(self.__dependencies)
+        parser = Parser()
+        downloader = Downloader()
+        for elem in self.__dependencies.keys():
+            parser.package_name = elem
+            parser.run()
+            downloader.download_link = parser.download_link
+            downloader.package_name = parser.package_name
+            downloader.run()
+
+class Package_manager:
+    pass
