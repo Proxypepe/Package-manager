@@ -1,4 +1,5 @@
 import platform
+import os
 import requests
 from bs4 import BeautifulSoup
 from zipfile import ZipFile
@@ -27,10 +28,10 @@ class Parser:
 
     def __get_download_link(self):
         return self.__download_link
-    
+
     def __set_version(self, version):
         self.__version = version
-        
+
     # properties
     package_name = property(fset=__set_package, fget=__get_package_name)
     download_link = property(fset=__set_download_link, fget=__get_download_link)
@@ -86,6 +87,7 @@ class Parser:
     def run(self):
         self.__parse_download_page()
         self.__create_download_link()
+
 
 class Downloader:
 
@@ -176,6 +178,7 @@ class DependenceSolver:
         self.__set_metadata()
         self.__check_dependencies()
 
+
 class Package_manager:
 
     def __init__(self):
@@ -201,3 +204,39 @@ class Package_manager:
                 except RuntimeError:
                     pass
             return
+
+
+class Installer:
+
+    def __init__(self):
+        self.__package_name = ""
+        self.__file_name = ""
+
+    def __set_package(self, name):
+        self.__package_name = name
+
+    def __get_package(self):
+        return self.__package_name
+
+    package_name = property(fset=__set_package, fget=__get_package)
+
+    def __get_files_name(self, files):
+        packages_name = []
+        for file in files:
+            packages_name.append(file.split('-')[0].lower())
+        return packages_name
+
+    def __install(self):
+        print(os.getcwd())
+        files = []
+        dir_name = []
+        for root, dirs, files in os.walk("."):
+            for filename in files:
+                if ".whl" in filename:
+                    files.append(filename)
+        print(*files)
+        # dir_name = self.__get_files_name(files)
+        # print(*dir_name)
+
+    def run(self):
+        self.__install()
