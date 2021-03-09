@@ -1,5 +1,5 @@
 import sys
-from package_manager import Parser, Downloader, DependenceSolver, Package_manager, Installer
+from package_manager import Parser, Downloader, DependenceSolver, PackageManager, Installer
 
 def main():
     if len(sys.argv) > 1:
@@ -8,7 +8,7 @@ def main():
                 parser = Parser()
                 downloader = Downloader()
                 solver = DependenceSolver()
-                pack = Package_manager()
+                pack = PackageManager()
                 parser.package_name = sys.argv[i]
                 parser.run()
                 downloader.download_link = parser.download_link
@@ -17,6 +17,11 @@ def main():
                 solver.file_name = downloader.package_name
                 solver.run()
                 pack.run(solver.dependencies)
+                installer = Installer()
+                installer.run()
+        elif sys.argv[1] == "-t":
+            test()
+
 
 def debug():
     pass
@@ -27,6 +32,6 @@ def test():
     installer.run()
 
 if __name__ == '__main__':
-    # main()
-    test()
+    main()
+    # test()
 

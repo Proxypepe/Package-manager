@@ -3,6 +3,8 @@ import os
 import requests
 from bs4 import BeautifulSoup
 from zipfile import ZipFile
+from tarfile import TarFile
+import tarfile
 import Errors
 
 
@@ -76,13 +78,12 @@ class Parser:
                 if condition:
                     return
                 else:
-                    condition = self.__check(".whl", packages)
-                    if condition:
+                    if self.__check(".whl", packages):
                         return
-                    else:
-                        condition = self.__check(".tar.gz", packages)
-                        if condition:
-                            return
+                    if self.__check(".tar.gz", packages):
+                        return
+                    if self.__check(".zip", packages):
+                        return
 
     def run(self):
         self.__parse_download_page()
@@ -157,29 +158,51 @@ class DependenceSolver:
     dependencies = property(fget=__get_deps)
 
     def __set_metadata(self):
-        self.zip_file = self.__file_name
-        meta_path = [s for s in self.__zipf.namelist() if "METADATA" in s][0]
-        with self.__zipf.open(meta_path) as file:
-            self.__meta = file.read().decode("utf-8")
+        # self.zip_file = self.__file_name
+        if ".whl" in self.__file_name or ".zip" in self.__file_name:
+            with ZipFile(self.__file_name) as self.__zipf:
+                try:
+                    meta_path = [s for s in self.__zipf.namelist() if "METADATA" in s][0]
+                    with self.__zipf.open(meta_path) as file:
+                        self.__meta_data = file.read().decode("utf-8")
+                except IndexError:
+                    self.__meta_data = "Empty"
+        elif ".tar.gz" in self.__file_name:
+            print(f"collecting {self.__file_name}")
+            self.__zipf = tarfile.open(self.__file_name)
+            try:
+                meta_path = [s for s in self.__zipf.getnames() if "requires" in s][0]
+                self.__meta_data = self.__zipf.extractfile(meta_path).read().decode("utf-8")
+            except IndexError:
+                self.__meta_data = "Empty"
+            self.__zipf.close()
+
 
     def __check_dependencies(self):
         self.__dependencies.clear()
-        for line in self.__meta.split("\n"):
-            line = line.split(" ")
-            if not line:
-                break
-            if line[0] == "Requires-Dist:" and "extra" not in line:
-                self.__dependencies[line[1]] = 0
-
-    def __recursive_dep(self, dictionary: dict):
-        pass
+        if self.__meta_data != "Empty":
+            if ".whl" in self.__file_name or ".zip" in self.__file_name:
+                for line in self.__meta_data.split("\n"):
+                    line = line.split(" ")
+                    if not line:
+                        break
+                    if line[0] == "Requires-Dist:" and "extra" not in line:
+                        self.__dependencies[line[1]] = 0
+            elif ".tar.gz" in self.__file_name:
+                for line in self.__meta_data.split("\n"):
+                    if "[" in line or '' == line:
+                        break
+                    try:
+                        self.__dependencies[line.split(">=")[0]] = f">={line.split('>=')[1]}"
+                    except IndexError:
+                        self.__dependencies[line.split(">=")[0]] = "0"
 
     def run(self):
         self.__set_metadata()
         self.__check_dependencies()
 
 
-class Package_manager:
+class PackageManager:
 
     def __init__(self):
         self.__parser = Parser()
@@ -192,7 +215,7 @@ class Package_manager:
         else:
             for elem in d.keys():
                 try:
-                    print(d)
+                    # print(d)
                     self.__parser.package_name = elem
                     self.__parser.run()
                     self.__downloader.download_link = self.__parser.download_link
@@ -226,17 +249,18 @@ class Installer:
             packages_name.append(file.split('-')[0].lower())
         return packages_name
 
-    def __install(self):
-        print(os.getcwd())
-        files = []
-        dir_name = []
-        for root, dirs, files in os.walk("."):
-            for filename in files:
-                if ".whl" in filename:
-                    files.append(filename)
-        print(*files)
-        # dir_name = self.__get_files_name(files)
-        # print(*dir_name)
+    def __extractor(self):
+        # print(os.listdir())
+        path_to_extract = "C:\\Users\\sasha\\PycharmProjects\\Package-manager\\site-packages"
+        for file in os.listdir():
+            if ".whl" in file or ".zip" in file:
+                with ZipFile(file) as zip_file:
+                    zip_file.extractall(path_to_extract)
+            if ".tar.gz" in file:
+                zip_file = tarfile.open(file)
+                zip_file.extractall(path_to_extract)
+                zip_file.close()
+
 
     def run(self):
-        self.__install()
+        self.__extractor()
